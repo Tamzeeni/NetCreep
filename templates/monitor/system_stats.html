@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+
+{% block title %}Current System Stats{% endblock %}
+
+{% block content %}
+<h1>Current System Statistics</h1>
+<ul id="stats">
+    <li>CPU Usage: <span id="cpu_usage"></span>%</li>
+    <li>Memory Usage: <span id="memory_usage"></span>%</li>
+    <li>Disk Usage: <span id="disk_usage"></span>%</li>
+    <li>Network Sent: <span id="bytes_sent"></span> bytes</li>
+    <li>Network Received: <span id="bytes_recv"></span> bytes</li>
+</ul>
+
+<script>
+    function fetchStats() {
+        fetch("{% url 'system_stats_json' %}")
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('cpu_usage').textContent = data.cpu_usage;
+                document.getElementById('memory_usage').textContent = data.memory_usage;
+                document.getElementById('disk_usage').textContent = data.disk_usage;
+                document.getElementById('bytes_sent').textContent = data.network_io.bytes_sent;
+                document.getElementById('bytes_recv').textContent = data.network_io.bytes_recv;
+            });
+    }
+
+    setInterval(fetchStats, 5000);  // Fetch stats every 5 seconds
+    fetchStats();  // Initial fetch
+</script>
+{% endblock %}

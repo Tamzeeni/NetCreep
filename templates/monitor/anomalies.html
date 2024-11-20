@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{% block title %}Network Anomalies{% endblock %}
+
+{% block content %}
+<div class="anomalies-container">
+    <h1>Network Anomalies</h1>
+    
+    <div id="active-anomalies">
+        <h2>Active Anomalies</h2>
+        <div class="anomalies-list">
+            <!-- Will be populated via JavaScript -->
+        </div>
+    </div>
+
+    <div class="chart-container">
+        <h2>Anomaly History</h2>
+        <canvas id="anomalyChart"></canvas>
+    </div>
+</div>
+
+<script>
+function updateAnomalies() {
+    fetch("{% url 'system_stats_json' %}")
+        .then(response => response.json())
+        .then(data => {
+            const anomaliesContainer = document.querySelector('.anomalies-list');
+            if (data.anomalies && data.anomalies.length > 0) {
+                const anomaliesHTML = data.anomalies.map(anomaly => `
+                    <div class="anomaly-card severity-${anomaly.severity.toLowerCase()}">
+                        <h3>${anomaly.type}</h3>
+                        <p>${anomaly.description}</p>
+                        <span class="timestamp">${new Date().toLocaleTimeString()}</span>
+                    </div>
+                `).join('');
+                anomaliesContainer.innerHTML = anomaliesHTML;
+            }
+        });
+}
+
+// Update every 5 seconds
+setInterval(updateAnomalies, 5000);
+updateAnomalies();
+</script>
+
+<style>
+.anomalies-container {
+    padding: 20px;
+}
+
+.anomaly-card {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 15px;
+    margin: 10px 0;
+}
+
+.severity-high {
+    border-left: 5px solid #ff4444;
+    background-color: #ffebee;
+}
+
+.severity-medium {
+    border-left: 5px solid #ffbb33;
+    background-color: #fff8e1;
+}
+
+.severity-low {
+    border-left: 5px solid #00C851;
+    background-color: #e8f5e9;
+}
+</style>
+{% endblock %}

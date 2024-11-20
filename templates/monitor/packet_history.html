@@ -1,0 +1,18 @@
+<!-- templates/monitor/packet_history.html -->
+
+{% extends 'base.html' %}
+
+{% block title %}Packet History{% endblock %}
+
+{% block content %}
+<h1>Packet History</h1>
+<form method="get">
+    <input type="text" name="q" value="{{ query }}" placeholder="Search packets...">
+    <button type="submit">Search</button>
+</form>
+<ul>
+    {% for packet in packets %}
+        <li>{{ packet.timestamp }}: {{ packet.summary }}</li>
+    {% endfor %}
+</ul>
+{% endblock %}

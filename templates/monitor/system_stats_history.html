@@ -1,0 +1,150 @@
+<!-- templates/monitor/system_stats_history.html -->
+
+{% extends 'base.html' %}
+
+{% block title %}System Stats History{% endblock %}
+
+{% block content %}
+<style>
+    .chart-container {
+        width: 80%;
+        margin: 20px auto;
+        padding: 20px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        background-color: white;
+    }
+
+    h2 {
+        text-align: center;
+        color: #333;
+    }
+
+    canvas {
+        margin-bottom: 20px;
+    }
+
+    .filter-form {
+        margin: 20px auto;
+        text-align: center;
+    }
+</style>
+
+<h1>System Statistics History</h1>
+
+<div class="filter-form">
+    <form method="get">
+        <label for="start_date">Start Date:</label>
+        <input type="date" name="start_date" id="start_date">
+        <label for="end_date">End Date:</label>
+        <input type="date" name="end_date" id="end_date">
+        <button type="submit">Filter</button>
+    </form>
+</div>
+
+<!-- Charts -->
+<div class="chart-container">
+    <h2>CPU Usage</h2>
+    <canvas id="cpuChart"></canvas>
+</div>
+
+<div class="chart-container">
+    <h2>Memory Usage</h2>
+    <canvas id="memoryChart"></canvas>
+</div>
+
+<div class="chart-container">
+    <h2>Disk Usage</h2>
+    <canvas id="diskChart"></canvas>
+</div>
+
+<div class="chart-container">
+    <h2>Network Traffic</h2>
+    <canvas id="networkChart"></canvas>
+</div>
+
+<!-- Raw Data List -->
+<div class="chart-container">
+    <h2>Raw Data</h2>
+    <ul>
+        {% for stat in stats %}
+            <li>{{ stat.timestamp }} - CPU: {{ stat.cpu_usage }}%, Memory: {{ stat.memory_usage }}%, 
+                Disk: {{ stat.disk_usage }}%, Sent: {{ stat.bytes_sent }} bytes, 
+                Received: {{ stat.bytes_recv }} bytes</li>
+        {% endfor %}
+    </ul>
+</div>
+
+<script>
+    // Get the data passed from the view
+    const chartData = {{ chart_data_json|safe }};
+
+    // Function to create a chart
+    function createChart(canvasId, label, data, color) {
+        const ctx = document.getElementById(canvasId).getContext('2d');
+        return new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: chartData.labels,
+                datasets: [{
+                    label: label,
+                    data: data,
+                    borderColor: color,
+                    tension: 0.1,
+                    fill: false
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+
+    // Create CPU Usage Chart
+    createChart('cpuChart', 'CPU Usage %', chartData.cpu_data, 'rgb(75, 192, 192)');
+
+    // Create Memory Usage Chart
+    createChart('memoryChart', 'Memory Usage %', chartData.memory_data, 'rgb(255, 99, 132)');
+
+    // Create Disk Usage Chart
+    createChart('diskChart', 'Disk Usage %', chartData.disk_data, 'rgb(153, 102, 255)');
+
+    // Create Network Traffic Chart (with two datasets)
+    const networkCtx = document.getElementById('networkChart').getContext('2d');
+    new Chart(networkCtx, {
+        type: 'line',
+        data: {
+            labels: chartData.labels,
+            datasets: [
+                {
+                    label: 'Bytes Sent',
+                    data: chartData.network_sent,
+                    borderColor: 'rgb(54, 162, 235)',
+                    tension: 0.1,
+                    fill: false
+                },
+                {
+                    label: 'Bytes Received',
+                    data: chartData.network_recv,
+                    borderColor: 'rgb(255, 159, 64)',
+                    tension: 0.1,
+                    fill: false
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}
