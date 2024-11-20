@@ -4,13 +4,26 @@ from django.db import models
 class Packet(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
     summary = models.TextField()
+    protocol = models.CharField(max_length=10, default='UNKNOWN')  # TCP, UDP, ICMP, etc.
+    src_ip = models.GenericIPAddressField(null=True, blank=True)  # Make nullable
+    dst_ip = models.GenericIPAddressField(null=True, blank=True)  # Make nullable
+    src_port = models.IntegerField(null=True, blank=True)
+    dst_port = models.IntegerField(null=True, blank=True)
+    size = models.IntegerField(default=0)  # Default size to 0
 
     class Meta:
         ordering = ['-timestamp']
         indexes = [
             models.Index(fields=['-timestamp']),
+            models.Index(fields=['protocol']),
+            models.Index(fields=['src_ip']),
+            models.Index(fields=['dst_ip']),
         ]
 
+    def __str__(self):
+        return f"{self.timestamp}: {self.protocol} {self.src_ip}:{self.src_port} -> {self.dst_ip}:{self.dst_port}"
+
+        
     @classmethod
     def cleanup_old_packets(cls):
         """Keep only the latest 1000 packets"""

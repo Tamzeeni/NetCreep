@@ -1,0 +1,222 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="analysis-dashboard">
+    <!-- Debug Information -->
+    <div class="analysis-card">
+        <h2>Debug Information</h2>
+        <p>Total Packets: {{ debug_packet_count }}</p>
+        <p>Protocol Data: {{ protocol_distribution }}</p>
+        <p>Talkers Data: {{ top_talkers }}</p>
+        <p>Port Data: {{ port_activity }}</p>
+    </div>
+
+    <!-- Protocol Distribution Chart -->
+    <div class="analysis-card">
+        <h2>Protocol Distribution</h2>
+        <canvas id="protocolChart"></canvas>
+    </div>
+
+    <!-- Top Talkers Chart -->
+    <div class="analysis-card">
+        <h2>Top Talkers</h2>
+        <canvas id="talkersChart"></canvas>
+    </div>
+
+    <!-- Port Activity Chart -->
+    <div class="analysis-card">
+        <h2>Most Active Ports</h2>
+        <canvas id="portsChart"></canvas>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Helper function for formatting bytes
+function formatBytes(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+// Port mapping for common services
+const commonPorts = {
+    '20': 'FTP Data',
+    '21': 'FTP Control',
+    '22': 'SSH',
+    '23': 'Telnet',
+    '25': 'SMTP',
+    '53': 'DNS',
+    '80': 'HTTP',
+    '443': 'HTTPS',
+    '3306': 'MySQL',
+    '3389': 'RDP',
+    '5353': 'mDNS',
+    '5432': 'PostgreSQL',
+    '27017': 'MongoDB'
+};
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Protocol Data:', {{ protocol_distribution|safe }});
+    console.log('Talkers Data:', {{ top_talkers|safe }});
+    console.log('Port Data:', {{ port_activity|safe }});
+
+    try {
+        // Protocol Distribution Chart
+        const protocolData = JSON.parse('{{ protocol_distribution|safe }}');
+        if (protocolData.length > 0) {
+            const total = protocolData.reduce((sum, item) => sum + item.count, 0);
+            new Chart(document.getElementById('protocolChart'), {
+                type: 'pie',
+                data: {
+                    labels: protocolData.map(item => item.protocol),
+                    datasets: [{
+                        data: protocolData.map(item => item.count),
+                        backgroundColor: [
+                            '#FF6384',
+                            '#36A2EB',
+                            '#FFCE56',
+                            '#4BC0C0',
+                            '#9966FF'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.raw;
+                                    const percentage = ((value / total) * 100).toFixed(1);
+                                    return `${context.label}: ${value} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Top Talkers Chart
+        const talkersData = JSON.parse('{{ top_talkers|safe }}');
+        if (talkersData.length > 0) {
+            new Chart(document.getElementById('talkersChart'), {
+                type: 'bar',
+                data: {
+                    labels: talkersData.map(item => item.src_ip),
+                    datasets: [{
+                        label: 'Packet Count',
+                        data: talkersData.map(item => item.packet_count),
+                        backgroundColor: '#36A2EB'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const bytes = talkersData[context.dataIndex].total_bytes;
+                                    const packets = context.raw;
+                                    return [
+                                        `Packets: ${packets}`,
+                                        `Total Bytes: ${formatBytes(bytes)}`
+                                    ];
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Port Activity Chart
+        const portData = JSON.parse('{{ port_activity|safe }}');
+        if (portData.length > 0) {
+            new Chart(document.getElementById('portsChart'), {
+                type: 'bar',
+                data: {
+                    labels: portData.map(item => {
+                        const portNum = item.dst_port.toString();
+                        return commonPorts[portNum] ? `${portNum} (${commonPorts[portNum]})` : portNum;
+                    }),
+                    datasets: [{
+                        label: 'Connection Count',
+                        data: portData.map(item => item.count),
+                        backgroundColor: '#FFCE56'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        },
+                        x: {
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 45
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    } catch (error) {
+        console.error('Error creating charts:', error);
+    }
+});
+</script>
+
+<style>
+.analysis-dashboard {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 20px;
+    padding: 20px;
+}
+
+.analysis-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    min-height: 400px;
+}
+
+.analysis-card h2 {
+    margin-bottom: 20px;
+    color: #333;
+    text-align: center;
+}
+
+canvas {
+    width: 100% !important;
+    height: 300px !important;
+}
+
+/* Add some spacing for rotated labels */
+#portsChart {
+    margin-bottom: 40px;
+}
+
+/* Make debug info more readable */
+.analysis-card p {
+    word-break: break-word;
+    margin-bottom: 10px;
+    font-family: monospace;
+    white-space: pre-wrap;
+}
+</style>
+{% endblock %}

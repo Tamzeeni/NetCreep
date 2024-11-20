@@ -1,28 +1,42 @@
-
-
 from scapy.all import sniff, TCP, UDP, ICMP, IP
 from .models import Packet
+from django.utils import timezone
+import logging 
+
+
+logger = logging.getLogger(__name__)
+
+
 def packet_callback(packet):
     try:
-        summary = ""
-        ip_layer = None
-
         if packet.haslayer(IP):
             ip_layer = packet.getlayer(IP)
-            summary = f"IP: {ip_layer.src} -> {ip_layer.dst}"
-
-            if packet.haslayer(TCP) and ip_layer:
+            protocol = "OTHER"
+            src_port = None
+            dst_port = None
+            
+            if packet.haslayer(TCP):
+                protocol = "TCP"
                 tcp_layer = packet.getlayer(TCP)
-                summary = f"TCP: {ip_layer.src}:{tcp_layer.sport} -> {ip_layer.dst}:{tcp_layer.dport}"
-            elif packet.haslayer(UDP) and ip_layer:
+                src_port = tcp_layer.sport
+                dst_port = tcp_layer.dport
+            elif packet.haslayer(UDP):
+                protocol = "UDP"
                 udp_layer = packet.getlayer(UDP)
-                summary = f"UDP: {ip_layer.src}:{udp_layer.sport} -> {ip_layer.dst}:{udp_layer.dport}"
-            elif packet.haslayer(ICMP) and ip_layer:
-                icmp_layer = packet.getlayer(ICMP)
-                summary = f"ICMP: {ip_layer.src} -> {ip_layer.dst} Type: {icmp_layer.type}"
+                src_port = udp_layer.sport
+                dst_port = udp_layer.dport
+            elif packet.haslayer(ICMP):
+                protocol = "ICMP"
 
-            # Store packet in database
-            Packet.objects.create(summary=summary)
+            Packet.objects.create(
+                summary=f"{protocol}: {ip_layer.src}:{src_port} -> {ip_layer.dst}:{dst_port}",
+                protocol=protocol,
+                src_ip=ip_layer.src,
+                dst_ip=ip_layer.dst,
+                src_port=src_port,
+                dst_port=dst_port,
+                size=len(packet)
+            )
             
     except Exception as e:
         logger.error(f"Error processing packet: {str(e)}", exc_info=True)

@@ -10,10 +10,12 @@ from django.http import JsonResponse
 from .system_monitor import get_system_stats
 from django.db.models import Q
 import logging
+from django.db.models import Count, Sum
+from django.utils import timezone
+from datetime import timedelta
 
 
 logger = logging.getLogger(__name__)
-
 
 def dashboard_view(request):
     # Get initial data for first page load
@@ -110,3 +112,64 @@ def anomalies_view(request):
     return render(
         request, "monitor/anomalies.html", {"recent_anomalies": recent_anomalies}
     )
+
+
+def get_protocol_distribution():
+    return (Packet.objects
+            .values('protocol')
+            .annotate(count=Count('id'))
+            .order_by('-count'))
+
+def get_top_talkers():
+    return (Packet.objects
+            .values('src_ip')
+            .annotate(
+                packet_count=Count('id'),
+                total_bytes=Sum('size')
+            )
+            .order_by('-packet_count')[:10])
+
+def get_port_activity():
+    return (Packet.objects
+            .filter(dst_port__isnull=False)
+            .values('dst_port')
+            .annotate(count=Count('id'))
+            .order_by('-count')[:10])
+
+def network_analysis_view(request):
+    # Get protocol distribution
+    protocol_dist = list(Packet.objects
+        .values('protocol')
+        .annotate(count=Count('id'))
+        .order_by('-count'))
+    print("Protocol Distribution:", protocol_dist)  # Debug print
+
+    # Get top talkers
+    top_talkers = list(Packet.objects
+        .values('src_ip')
+        .annotate(
+            packet_count=Count('id'),
+            total_bytes=Sum('size')
+        )
+        .exclude(src_ip__isnull=True)
+        .order_by('-packet_count')[:10])
+    print("Top Talkers:", top_talkers)  # Debug print
+
+    # Get port activity
+    port_activity = list(Packet.objects
+        .values('dst_port')
+        .annotate(count=Count('id'))
+        .exclude(dst_port__isnull=True)
+        .order_by('-count')[:10])
+    print("Port Activity:", port_activity)  # Debug print
+
+    # Create context with debug information
+    context = {
+        'protocol_distribution': json.dumps(protocol_dist, cls=DjangoJSONEncoder),
+        'top_talkers': json.dumps(top_talkers, cls=DjangoJSONEncoder),
+        'port_activity': json.dumps(port_activity, cls=DjangoJSONEncoder),
+        'debug_packet_count': Packet.objects.count()  # Add total packet count
+    }
+
+    print("Context being sent to template:", context)  # Debug print
+    return render(request, 'monitor/network_analysis.html', context)

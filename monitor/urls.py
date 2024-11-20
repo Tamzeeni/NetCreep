@@ -13,4 +13,5 @@ urlpatterns = [
     ),
     path("system-stats-json/", views.system_stats_json, name="system_stats_json"),
     path("anomalies/", views.anomalies_view, name="anomalies"),
+    path('network-analysis/', views.network_analysis_view, name='network_analysis'),
 ]
