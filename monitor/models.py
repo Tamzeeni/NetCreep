@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.validators import MinValueValidator, MaxValueValidator
 
 
 class Packet(models.Model):
@@ -67,3 +68,54 @@ class NetworkAnomaly(models.Model):
 
     def __str__(self):
         return f"{self.type} - {self.timestamp}"
+
+
+class AlertThreshold(models.Model):
+    METRIC_CHOICES = [
+        ('cpu_usage', 'CPU Usage'),
+        ('memory_usage', 'Memory Usage'),
+        ('disk_usage', 'Disk Usage'),
+        ('network_traffic', 'Network Traffic'),
+        ('port_scan', 'Port Scan Detection'),
+        ('high_traffic_ip', 'High Traffic IP')
+    ]
+    
+    SEVERITY_CHOICES = [
+        ('low', 'Low'),
+        ('medium', 'Medium'),
+        ('high', 'High'),
+        ('critical', 'Critical')
+    ]
+
+    name = models.CharField(max_length=100)
+    metric = models.CharField(max_length=50, choices=METRIC_CHOICES)
+    threshold_value = models.FloatField(
+        validators=[MinValueValidator(0), MaxValueValidator(100)]
+    )
+    severity = models.CharField(max_length=20, choices=SEVERITY_CHOICES)
+    enabled = models.BooleanField(default=True)
+    email_notification = models.BooleanField(default=False)
+    notification_email = models.EmailField(blank=True, null=True)
+    description = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.name} ({self.metric})"
+
+class Alert(models.Model):
+    threshold = models.ForeignKey(AlertThreshold, on_delete=models.CASCADE)
+    triggered_value = models.FloatField()
+    triggered_at = models.DateTimeField(auto_now_add=True)
+    acknowledged = models.BooleanField(default=False)
+    acknowledged_by = models.CharField(max_length=100, blank=True, null=True)
+    acknowledged_at = models.DateTimeField(null=True, blank=True)
+    resolved = models.BooleanField(default=False)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+    notes = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ['-triggered_at']
+
+    def __str__(self):
+        return f"{self.threshold.name} - {self.triggered_at}"

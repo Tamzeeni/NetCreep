@@ -3,6 +3,11 @@ from django.http import HttpResponse
 from .sniffer import start_sniffing
 from .system_monitor import get_system_stats
 from .models import Packet, SystemStat, NetworkAnomaly
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from django.utils import timezone
+from .models import AlertThreshold, Alert
+from .forms import AlertThresholdForm
 import threading
 from django.core.serializers.json import DjangoJSONEncoder
 import json
@@ -10,6 +15,7 @@ from django.http import JsonResponse
 from .system_monitor import get_system_stats
 from django.db.models import Q
 import logging
+from .alert_service import check_threshold
 from django.db.models import Count, Sum
 from django.utils import timezone
 from datetime import timedelta
@@ -173,3 +179,75 @@ def network_analysis_view(request):
 
     print("Context being sent to template:", context)  # Debug print
     return render(request, 'monitor/network_analysis.html', context)
+
+
+
+def alert_dashboard(request):
+    active_alerts = Alert.objects.filter(resolved=False)
+    resolved_alerts = Alert.objects.filter(resolved=True)
+    thresholds = AlertThreshold.objects.all()
+    
+    context = {
+        'active_alerts': active_alerts,
+        'resolved_alerts': resolved_alerts,
+        'thresholds': thresholds,
+    }
+    return render(request, 'monitor/alert_dashboard.html', context)
+
+def manage_thresholds(request):
+    if request.method == 'POST':
+        form = AlertThresholdForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Alert threshold created successfully.')
+            return redirect('alert_dashboard')
+    else:
+        form = AlertThresholdForm()
+    
+    thresholds = AlertThreshold.objects.all()
+    return render(request, 'monitor/manage_thresholds.html', {
+        'form': form,
+        'thresholds': thresholds
+    })
+
+def acknowledge_alert(request, alert_id):
+    alert = get_object_or_404(Alert, id=alert_id)
+    if request.method == 'POST':
+        alert.acknowledged = True
+        alert.acknowledged_by = request.user.username
+        alert.acknowledged_at = timezone.now()
+        alert.notes = request.POST.get('notes', '')
+        alert.save()
+        messages.success(request, 'Alert acknowledged successfully.')
+    return redirect('alert_dashboard')
+
+def resolve_alert(request, alert_id):
+    alert = get_object_or_404(Alert, id=alert_id)
+    if request.method == 'POST':
+        alert.resolved = True
+        alert.resolved_at = timezone.now()
+        alert.save()
+        messages.success(request, 'Alert resolved successfully.')
+    return redirect('alert_dashboard')
+
+def test_alert(request):
+    """Test function to trigger an alert"""
+    # Create a test threshold if it doesn't exist
+    threshold, created = AlertThreshold.objects.get_or_create(
+        name="High CPU Usage Test",
+        defaults={
+            'metric': 'cpu_usage',
+            'threshold_value': 80.0,
+            'severity': 'high',
+            'enabled': True,
+            'email_notification': True,
+            'notification_email': 'test@example.com',
+            'description': 'Test alert for CPU usage above 80%'
+        }
+    )
+    
+    # Simulate a high CPU value
+    check_threshold('cpu_usage', 85.0)
+    
+    messages.success(request, 'Test alert has been triggered. Check the console for the email output.')
+    return redirect('alert_dashboard')

@@ -14,4 +14,9 @@ urlpatterns = [
     path("system-stats-json/", views.system_stats_json, name="system_stats_json"),
     path("anomalies/", views.anomalies_view, name="anomalies"),
     path('network-analysis/', views.network_analysis_view, name='network_analysis'),
+    path('alerts/', views.alert_dashboard, name='alert_dashboard'),
+    path('alerts/thresholds/', views.manage_thresholds, name='manage_thresholds'),
+    path('alerts/acknowledge/<int:alert_id>/', views.acknowledge_alert, name='acknowledge_alert'),
+    path('alerts/resolve/<int:alert_id>/', views.resolve_alert, name='resolve_alert'),
+    path('alerts/test/', views.test_alert, name='test_alert'),
 ]
