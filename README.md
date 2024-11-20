@@ -40,6 +40,28 @@ psutil
 scapy
 ```
 
+## Environment Variables
+
+Create a `.env` file in the root directory with the following variables:
+
+### Required Variables
+- `SECRET_KEY`: Django secret key
+- `DB_NAME`: Database name
+- `DB_USER`: Database username
+- `DB_PASSWORD`: Database password
+
+### Optional Variables
+- `DEBUG`: Set to 'True' for development (default: False)
+- `ALLOWED_HOSTS`: Comma-separated list of allowed hosts
+- `DB_ENGINE`: Database engine (default: django.db.backends.postgresql)
+- `DB_HOST`: Database host (default: localhost)
+- `DB_PORT`: Database port (default: 5432)
+- `EMAIL_BACKEND`: Email backend (default: console backend)
+- `CAPTURE_INTERFACE`: Network interface for packet capture
+- `MAX_PACKET_STORE`: Maximum number of packets to store
+- `ALERT_CLEANUP_DAYS`: Days to keep alert history
+
+
 ## Installation
 
 1. Clone the repository:

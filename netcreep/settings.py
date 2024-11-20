@@ -11,23 +11,17 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 import os
-
 from pathlib import Path
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
-
+SECRET_KEY = os.getenv('SECRET_KEY')
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',')
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-_o+qokctbbd(l-7t(q9o786=g)py$$nn%k@nnos78bw2f8rto*"
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = ["*"]
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 DEFAULT_FROM_EMAIL = 'netcreep@localhost'
@@ -119,6 +113,11 @@ LOGGING = {
     },
 }
 
+CAPTURE_INTERFACE = os.getenv('CAPTURE_INTERFACE', 'eth0')
+MAX_PACKET_STORE = int(os.getenv('MAX_PACKET_STORE', 10000))
+PACKET_CLEANUP_INTERVAL = int(os.getenv('PACKET_CLEANUP_INTERVAL', 3600))
+ALERT_EMAIL_ENABLED = os.getenv('ALERT_EMAIL_ENABLED', 'True') == 'True'
+ALERT_CLEANUP_DAYS = int(os.getenv('ALERT_CLEANUP_DAYS', 30))
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
