@@ -19,6 +19,11 @@ from .alert_service import check_threshold
 from django.db.models import Count, Sum
 from django.utils import timezone
 from datetime import timedelta
+import csv
+import json
+from django.http import HttpResponse
+from django.utils import timezone
+
 
 
 logger = logging.getLogger(__name__)
@@ -251,3 +256,48 @@ def test_alert(request):
     
     messages.success(request, 'Test alert has been triggered. Check the console for the email output.')
     return redirect('alert_dashboard')
+
+
+
+def export_packets_csv(request):
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="packet_history_{timezone.now().strftime("%Y%m%d_%H%M%S")}.csv"'
+    
+    writer = csv.writer(response)
+    writer.writerow(['Timestamp', 'Protocol', 'Source IP', 'Source Port', 
+                    'Destination IP', 'Destination Port', 'Size', 'Summary'])
+    
+    packets = Packet.objects.all().order_by('-timestamp')
+    for packet in packets:
+        writer.writerow([
+            packet.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
+            packet.protocol,
+            packet.src_ip,
+            packet.src_port,
+            packet.dst_ip,
+            packet.dst_port,
+            packet.size,
+            packet.summary
+        ])
+    
+    return response
+
+def export_packets_json(request):
+    packets = Packet.objects.all().order_by('-timestamp')
+    packet_list = []
+    
+    for packet in packets:
+        packet_list.append({
+            'timestamp': packet.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
+            'protocol': packet.protocol,
+            'source_ip': packet.src_ip,
+            'source_port': packet.src_port,
+            'destination_ip': packet.dst_ip,
+            'destination_port': packet.dst_port,
+            'size': packet.size,
+            'summary': packet.summary
+        })
+    
+    response = HttpResponse(json.dumps(packet_list, indent=2), content_type='application/json')
+    response['Content-Disposition'] = f'attachment; filename="packet_history_{timezone.now().strftime("%Y%m%d_%H%M%S")}.json"'
+    return response

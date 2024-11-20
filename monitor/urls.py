@@ -19,4 +19,6 @@ urlpatterns = [
     path('alerts/acknowledge/<int:alert_id>/', views.acknowledge_alert, name='acknowledge_alert'),
     path('alerts/resolve/<int:alert_id>/', views.resolve_alert, name='resolve_alert'),
     path('alerts/test/', views.test_alert, name='test_alert'),
+    path('packet-history/export/csv/', views.export_packets_csv, name='export_packets_csv'),
+    path('packet-history/export/json/', views.export_packets_json, name='export_packets_json'),
 ]
