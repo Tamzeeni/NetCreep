@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+
+{% block title %}Start Sniffing{% endblock %}
+
+{% block content %}
+<h1>Control Packet Sniffing</h1>
+<form method="post">
+    {% csrf_token %}
+    <button type="submit" name="action" value="start">Start Sniffing</button>
+    <button type="submit" name="action" value="stop">Stop Sniffing</button>
+</form>
+{% endblock %}
