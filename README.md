@@ -210,9 +210,6 @@ For support, please open an issue in the GitHub repository or contact [your-emai
 - Security features
 - UI/UX improvements
 
-## Authors
-- Your Name - Initial work - [YourGitHub]
-
 ## Version History
 - 0.1.0
   - Initial Release
