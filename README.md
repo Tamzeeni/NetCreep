@@ -201,7 +201,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - psutil for system monitoring
 
 ## Support
-For support, please open an issue in the GitHub repository or contact [your-email].
+For support, please open an issue in the GitHub repository or contact me directly
 
 ## Roadmap
 - Enhanced network analysis
