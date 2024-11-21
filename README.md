@@ -66,7 +66,7 @@ Create a `.env` file in the root directory with the following variables:
 
 1. Clone the repository:
 ```
-git clone https://github.com/yourusername/netcreep.git
+git clone https://github.com/Tamzeeni/netcreep.git
 cd netcreep
 ```
 
