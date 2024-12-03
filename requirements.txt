@@ -9,8 +9,9 @@ channels==4.0.0
 click==8.1.7
 colorama==0.4.6
 constantly==23.10.4
+coverage==7.6.8
 cryptography==41.0.7
-daphne==4.1.2
+daphne==4.0.0
 distlib==0.3.9
 dj-database-url==2.1.0
 Django==5.0
@@ -21,6 +22,7 @@ django-formtools==2.5.1
 django-otp==1.5.4
 django-phonenumber-field==6.4.0
 django-ratelimit==4.1.0
+django-redis==5.4.0
 django-two-factor-auth==1.15.0
 filelock==3.16.1
 flake8==7.1.1
@@ -30,6 +32,7 @@ hyperlink==21.0.0
 identify==2.6.3
 idna==3.10
 incremental==24.7.2
+iniconfig==2.0.0
 ipaddress==1.0.23
 isort==5.13.2
 mccabe==0.7.0
@@ -40,6 +43,7 @@ packaging==24.2
 pandas==2.0.1
 pathspec==0.12.1
 platformdirs==4.3.6
+pluggy==1.5.0
 pre_commit==4.0.1
 psutil==5.9.6
 psycopg2==2.9.10
@@ -51,6 +55,9 @@ pydocstyle==6.3.0
 pyflakes==3.2.0
 pyOpenSSL==23.3.0
 pypng==0.20220715.0
+pytest==8.3.4
+pytest-cov==6.0.0
+pytest-django==4.9.0
 python-dateutil==2.9.0.post0
 python-dotenv==1.0.0
 python-json-logger==2.0.7
@@ -73,3 +80,4 @@ tzdata==2024.2
 virtualenv==20.28.0
 whitenoise==6.6.0
 zope.interface==7.1.1
+channels-redis==4.1.0

@@ -51,14 +51,19 @@ class PacketCaptureManager:
             List of network interface names
         """
         try:
-            return [
-                iface
-                for iface, addrs in psutil.net_if_addrs().items()
-                if any(addr.family == 2 for addr in addrs)  # IPv4 interfaces
-            ]
+            if os.name == 'nt':  # Windows
+                from scapy.arch.windows import get_windows_if_list
+                interfaces = get_windows_if_list()
+                return [iface['name'] for iface in interfaces if iface['name']]
+            else:  # Linux/Unix
+                return [
+                    iface
+                    for iface, addrs in psutil.net_if_addrs().items()
+                    if any(addr.family == 2 for addr in addrs)  # IPv4 interfaces
+                ]
         except Exception as e:
             logger.error(f"Interface detection error: {e}")
-            return ["eth0"]  # Fallback
+            return ["Wi-Fi"]  # Default to Wi-Fi on Windows
 
     def _packet_capture_worker(self, interface: str):
         """
@@ -95,11 +100,11 @@ class PacketCaptureManager:
                     "timestamp": timezone.now(),
                     "summary": f"{protocol}: {ip_layer.src}:{src_port or 'N/A'} -> {ip_layer.dst}:{dst_port or 'N/A'}",
                     "protocol": protocol,
-                    "src_ip": str(ip_layer.src),
-                    "dst_ip": str(ip_layer.dst),
-                    "src_port": src_port,
-                    "dst_port": dst_port,
-                    "size": len(packet),
+                    "source_ip": str(ip_layer.src),
+                    "destination_ip": str(ip_layer.dst),
+                    "source_port": src_port,
+                    "destination_port": dst_port,
+                    "packet_size": len(packet),
                 }
 
                 try:

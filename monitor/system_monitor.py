@@ -39,8 +39,8 @@ def get_system_stats():
                 cpu_usage=stats["cpu_usage"],
                 memory_usage=stats["memory_usage"],
                 disk_usage=stats["disk_usage"],
-                bytes_sent=stats["network_io"]["bytes_sent"],
-                bytes_recv=stats["network_io"]["bytes_recv"],
+                network_in=stats["network_io"]["bytes_recv"],
+                network_out=stats["network_io"]["bytes_sent"]
             )
     except SystemStat.DoesNotExist:
         # If no previous stat exists, create one
@@ -48,8 +48,8 @@ def get_system_stats():
             cpu_usage=stats["cpu_usage"],
             memory_usage=stats["memory_usage"],
             disk_usage=stats["disk_usage"],
-            bytes_sent=stats["network_io"]["bytes_sent"],
-            bytes_recv=stats["network_io"]["bytes_recv"],
+            network_in=stats["network_io"]["bytes_recv"],
+            network_out=stats["network_io"]["bytes_sent"]
         )
 
     return stats

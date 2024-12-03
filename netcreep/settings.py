@@ -149,12 +149,20 @@ X_FRAME_OPTIONS = "DENY"
 
 # Static and Media Files
 STATIC_URL = "/static/"
-STATIC_ROOT = BASE_DIR / "staticfiles"
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
+]
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
 # Channels Configuration
 ASGI_APPLICATION = "netcreep.asgi.application"
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer'
+    }
+}
 
 # Root URL Configuration
 ROOT_URLCONF = "netcreep.urls"

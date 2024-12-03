@@ -3,6 +3,7 @@ import json
 import logging
 import threading
 from datetime import timedelta
+import os
 
 from django.contrib import messages
 from django.core.serializers.json import DjangoJSONEncoder
@@ -10,6 +11,7 @@ from django.db.models import Count, Q, Sum
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+import psutil
 
 from .alert_service import check_threshold
 from .forms import AlertThresholdForm
@@ -31,14 +33,14 @@ def dashboard_view(request):
             {
                 "timestamp": packet.timestamp,
                 "protocol": packet.protocol,
-                "source": f"{packet.src_ip}:{packet.src_port}"
-                if packet.src_port
-                else packet.src_ip,
-                "destination": f"{packet.dst_ip}:{packet.dst_port}"
-                if packet.dst_port
-                else packet.dst_ip,
-                "size": packet.size,
-                "summary": packet.summary,
+                "source": f"{packet.source_ip}:{packet.source_port}"
+                if packet.source_port
+                else packet.source_ip,
+                "destination": f"{packet.destination_ip}:{packet.destination_port}"
+                if packet.destination_port
+                else packet.destination_ip,
+                "size": packet.packet_size,
+                "summary": str(packet),
             }
         )
 
@@ -52,27 +54,65 @@ def dashboard_view(request):
 
 sniffing_thread = None
 sniffing_active = False
+capture_manager = None
 
 
 def start_sniffing_view(request):
-    global sniffing_thread, sniffing_active
+    global sniffing_thread, sniffing_active, capture_manager
 
     if request.method == "POST":
         action = request.POST.get("action")
 
-        if action == "start" and not sniffing_active:
-            sniffing_active = True
-            sniffing_thread = threading.Thread(target=start_sniffing)
-            sniffing_thread.start()
-            return HttpResponse("Packet sniffing started!")
+        try:
+            if action == "start" and not sniffing_active:
+                sniffing_active = True
+                capture_manager = start_sniffing()
+                if capture_manager:
+                    logger.info("Packet capture started successfully")
+                    return JsonResponse({"status": "success", "message": "Packet sniffing started!"})
+                else:
+                    sniffing_active = False
+                    return JsonResponse(
+                        {"status": "error", "message": "Failed to start packet capture"},
+                        status=500
+                    )
 
-        elif action == "stop" and sniffing_active:
+            elif action == "stop" and sniffing_active:
+                if capture_manager:
+                    capture_manager.stop_capture()
+                sniffing_active = False
+                logger.info("Packet capture stopped")
+                return JsonResponse({"status": "success", "message": "Packet sniffing stopped!"})
+
+        except Exception as e:
+            logger.error(f"Error in packet capture: {e}", exc_info=True)
             sniffing_active = False
-            if sniffing_thread:
-                sniffing_thread.join()  # Wait for the thread to finish
-            return HttpResponse("Packet sniffing stopped!")
+            return JsonResponse(
+                {"status": "error", "message": str(e)},
+                status=500
+            )
 
-    return render(request, "monitor/start_sniffing.html")
+    # Get interface list for the template
+    available_interfaces = []
+    try:
+        if os.name == 'nt':  # Windows
+            from scapy.arch.windows import get_windows_if_list
+            interfaces = get_windows_if_list()
+            available_interfaces = [iface['name'] for iface in interfaces if iface['name']]
+        else:
+            available_interfaces = [
+                iface
+                for iface, addrs in psutil.net_if_addrs().items()
+                if any(addr.family == 2 for addr in addrs)
+            ]
+    except Exception as e:
+        logger.error(f"Error getting interfaces: {e}")
+        available_interfaces = ["Wi-Fi"]
+
+    return render(request, "monitor/start_sniffing.html", {
+        "sniffing_active": sniffing_active,
+        "available_interfaces": available_interfaces
+    })
 
 
 def system_stats_view(request):
@@ -147,16 +187,16 @@ def get_protocol_distribution():
 
 def get_top_talkers():
     return (
-        Packet.objects.values("src_ip")
-        .annotate(packet_count=Count("id"), total_bytes=Sum("size"))
+        Packet.objects.values("source_ip")
+        .annotate(packet_count=Count("id"), total_bytes=Sum("packet_size"))
         .order_by("-packet_count")[:10]
     )
 
 
 def get_port_activity():
     return (
-        Packet.objects.filter(dst_port__isnull=False)
-        .values("dst_port")
+        Packet.objects.filter(destination_port__isnull=False)
+        .values("destination_port")
         .annotate(count=Count("id"))
         .order_by("-count")[:10]
     )
@@ -171,18 +211,18 @@ def network_analysis_view(request):
 
     # Get top talkers
     top_talkers = list(
-        Packet.objects.values("src_ip")
-        .annotate(packet_count=Count("id"), total_bytes=Sum("size"))
-        .exclude(src_ip__isnull=True)
+        Packet.objects.values("source_ip")
+        .annotate(packet_count=Count("id"), total_bytes=Sum("packet_size"))
+        .exclude(source_ip__isnull=True)
         .order_by("-packet_count")[:10]
     )
     print("Top Talkers:", top_talkers)  # Debug print
 
     # Get port activity
     port_activity = list(
-        Packet.objects.values("dst_port")
+        Packet.objects.values("destination_port")
         .annotate(count=Count("id"))
-        .exclude(dst_port__isnull=True)
+        .exclude(destination_port__isnull=True)
         .order_by("-count")[:10]
     )
     print("Port Activity:", port_activity)  # Debug print
@@ -304,12 +344,12 @@ def export_packets_csv(request):
             [
                 packet.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
                 packet.protocol,
-                packet.src_ip,
-                packet.src_port,
-                packet.dst_ip,
-                packet.dst_port,
-                packet.size,
-                packet.summary,
+                packet.source_ip,
+                packet.source_port,
+                packet.destination_ip,
+                packet.destination_port,
+                packet.packet_size,
+                str(packet),
             ]
         )
 
@@ -325,12 +365,12 @@ def export_packets_json(request):
             {
                 "timestamp": packet.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
                 "protocol": packet.protocol,
-                "source_ip": packet.src_ip,
-                "source_port": packet.src_port,
-                "destination_ip": packet.dst_ip,
-                "destination_port": packet.dst_port,
-                "size": packet.size,
-                "summary": packet.summary,
+                "source_ip": packet.source_ip,
+                "source_port": packet.source_port,
+                "destination_ip": packet.destination_ip,
+                "destination_port": packet.destination_port,
+                "size": packet.packet_size,
+                "summary": str(packet),
             }
         )
 

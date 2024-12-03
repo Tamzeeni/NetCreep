@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}NetCreep{% endblock %}</title>
 
-    <!-- CSS Framework (Tailwind CSS) -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -14,48 +14,64 @@
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
-    <style>
-        .nav-link {
-            @apply px-4 py-2 text-gray-700 hover:text-blue-600 transition-colors;
-        }
-        .nav-link.active {
-            @apply text-blue-600 font-semibold;
-        }
-    </style>
+    {% load static %}
+    <script src="{% static 'js/dashboard.js' %}" defer></script>
 </head>
-<body class="bg-gray-50">
+<body class="bg-light">
     <!-- Navigation -->
-    <nav class="bg-white shadow-sm">
-        <div class="max-w-7xl mx-auto px-4">
-            <div class="flex space-x-4 py-3">
-                <a href="{% url 'monitor:dashboard' %}" class="nav-link">
-                    <i class="fas fa-chart-line mr-2"></i>Dashboard
-                </a>
-                <a href="{% url 'monitor:start_sniffing' %}" class="nav-link">
-                    <i class="fas fa-network-wired mr-2"></i>Start Sniffing
-                </a>
-                <a href="{% url 'monitor:system_stats' %}" class="nav-link">
-                    <i class="fas fa-server mr-2"></i>System Stats
-                </a>
-                <a href="{% url 'monitor:packet_history' %}" class="nav-link">
-                    <i class="fas fa-history mr-2"></i>Packet History
-                </a>
-                <a href="{% url 'monitor:system_stats_history' %}" class="nav-link">
-                    <i class="fas fa-chart-area mr-2"></i>Stats History
-                </a>
-                <a href="{% url 'monitor:network_analysis' %}" class="nav-link">
-                    <i class="fas fa-chart-pie mr-2"></i>Network Analysis
-                </a>
-                <a href="{% url 'monitor:alert_dashboard' %}" class="nav-link">
-                    <i class="fas fa-bell mr-2"></i>Alerts
-                </a>
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+        <div class="container-fluid">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'monitor:dashboard' %}">
+                            <i class="fas fa-chart-line me-2"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'monitor:start_sniffing' %}">
+                            <i class="fas fa-network-wired me-2"></i>Start Sniffing
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'monitor:system_stats' %}">
+                            <i class="fas fa-server me-2"></i>System Stats
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'monitor:packet_history' %}">
+                            <i class="fas fa-history me-2"></i>Packet History
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'monitor:system_stats_history' %}">
+                            <i class="fas fa-chart-area me-2"></i>Stats History
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'monitor:network_analysis' %}">
+                            <i class="fas fa-chart-pie me-2"></i>Network Analysis
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'monitor:alert_dashboard' %}">
+                            <i class="fas fa-bell me-2"></i>Alerts
+                        </a>
+                    </li>
+                </ul>
             </div>
         </div>
     </nav>
 
     <!-- Main Content -->
-    <main class="max-w-7xl mx-auto px-4 py-6">
+    <main class="container-fluid py-4">
         {% block content %}{% endblock %}
     </main>
+
+    <!-- Bootstrap 5 JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

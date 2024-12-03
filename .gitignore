@@ -115,6 +115,7 @@ config.ini
 anomaly_detection_cache/
 system_metrics/
 network_stats/
+staticfiles/
 
 # Jupyter Notebooks
 .ipynb_checkpoints/
