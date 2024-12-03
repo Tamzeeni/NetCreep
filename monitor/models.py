@@ -4,7 +4,11 @@ from django.utils import timezone
 
 class NetworkInterface(models.Model):
     name = models.CharField(max_length=50, unique=True)
-    description = models.TextField(blank=True, null=True)
+    description = models.TextField(
+        blank=True, 
+        null=True, 
+        help_text="Optional description of the network interface"
+    )
     is_active = models.BooleanField(default=True)
 
     def __str__(self):
@@ -39,7 +43,11 @@ class AlertThreshold(models.Model):
             ("critical", "Critical"),
         ],
     )
-    description = models.TextField(blank=True, null=True)
+    description = models.TextField(
+        blank=True, 
+        null=True, 
+        help_text="Optional description of the alert threshold conditions"
+    )
     enabled = models.BooleanField(default=True)
     notification_email = models.EmailField(blank=True, null=True)
     email_notification = models.BooleanField(default=False)
@@ -52,7 +60,12 @@ class Alert(models.Model):
     threshold = models.ForeignKey(AlertThreshold, on_delete=models.CASCADE)
     timestamp = models.DateTimeField(auto_now_add=True)
     current_value = models.FloatField()
-    description = models.TextField()
+    description = models.TextField(
+        blank=True, 
+        null=True, 
+        help_text="Detailed description of the alert",
+        default=""
+    )
     is_resolved = models.BooleanField(default=False)
     resolved_at = models.DateTimeField(null=True, blank=True)
 
@@ -82,8 +95,16 @@ class NetworkPerformanceMetric(models.Model):
 class NetworkAnomaly(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
     interface = models.ForeignKey(NetworkInterface, on_delete=models.CASCADE)
-    anomaly_type = models.CharField(max_length=50)
-    description = models.TextField()
+    anomaly_type = models.CharField(
+        max_length=50, 
+        default='unknown', 
+        help_text="Type of network anomaly detected"
+    )
+    description = models.TextField(
+        blank=True, 
+        null=True, 
+        help_text="Detailed description of the network anomaly"
+    )
     severity = models.CharField(
         max_length=20,
         choices=[
@@ -92,6 +113,7 @@ class NetworkAnomaly(models.Model):
             ("high", "High"),
             ("critical", "Critical"),
         ],
+        default='low'
     )
     is_resolved = models.BooleanField(default=False)
 
