@@ -14,7 +14,7 @@
 
 <script>
     function fetchStats() {
-        fetch("{% url 'system_stats_json' %}")
+        fetch("{% url 'monitor:system_stats_json' %}")
             .then(response => response.json())
             .then(data => {
                 document.getElementById('cpu_usage').textContent = data.cpu_usage;

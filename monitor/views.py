@@ -1,39 +1,53 @@
-from django.shortcuts import render
-from django.http import HttpResponse
-from .sniffer import start_sniffing
-from .system_monitor import get_system_stats
-from .models import Packet, SystemStat, NetworkAnomaly
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib import messages
-from django.utils import timezone
-from .models import AlertThreshold, Alert
-from .forms import AlertThresholdForm
-import threading
-from django.core.serializers.json import DjangoJSONEncoder
-import json
-from django.http import JsonResponse
-from .system_monitor import get_system_stats
-from django.db.models import Q
-import logging
-from .alert_service import check_threshold
-from django.db.models import Count, Sum
-from django.utils import timezone
-from datetime import timedelta
 import csv
 import json
-from django.http import HttpResponse
+import logging
+import threading
+from datetime import timedelta
+
+from django.contrib import messages
+from django.core.serializers.json import DjangoJSONEncoder
+from django.db.models import Count, Q, Sum
+from django.http import HttpResponse, JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
-
+from .alert_service import check_threshold
+from .forms import AlertThresholdForm
+from .models import Alert, AlertThreshold, NetworkAnomaly, Packet, SystemStat
+from .sniffer import start_sniffing
+from .system_monitor import get_system_stats
 
 logger = logging.getLogger(__name__)
 
+
 def dashboard_view(request):
-    # Get initial data for first page load
-    initial_stats = get_system_stats()
-    return render(request, 'monitor/dashboard.html', {
-        'initial_stats': initial_stats
-    })
+    """Main dashboard view showing system overview."""
+    recent_packets = Packet.objects.all().order_by("-timestamp")[:10]
+
+    # Format the packets for better display
+    formatted_packets = []
+    for packet in recent_packets:
+        formatted_packets.append(
+            {
+                "timestamp": packet.timestamp,
+                "protocol": packet.protocol,
+                "source": f"{packet.src_ip}:{packet.src_port}"
+                if packet.src_port
+                else packet.src_ip,
+                "destination": f"{packet.dst_ip}:{packet.dst_port}"
+                if packet.dst_port
+                else packet.dst_ip,
+                "size": packet.size,
+                "summary": packet.summary,
+            }
+        )
+
+    context = {
+        "recent_packets": formatted_packets,
+        "packet_count": Packet.objects.count(),
+        "latest_stats": SystemStat.objects.last(),
+    }
+    return render(request, "monitor/dashboard.html", context)
 
 
 sniffing_thread = None
@@ -73,8 +87,8 @@ def system_stats_view(request):
 
 def packet_history_view(request):
     try:
-        packets = Packet.objects.order_by('-timestamp')[:1000]  # Limit to last 1000
-        return render(request, 'monitor/packet_history.html', {'packets': packets})
+        packets = Packet.objects.order_by("-timestamp")[:1000]  # Limit to last 1000
+        return render(request, "monitor/packet_history.html", {"packets": packets})
     except Exception as e:
         logger.error(f"Error in packet_history_view: {str(e)}", exc_info=True)
         return HttpResponse(f"Error: {str(e)}", status=500)
@@ -126,114 +140,117 @@ def anomalies_view(request):
 
 
 def get_protocol_distribution():
-    return (Packet.objects
-            .values('protocol')
-            .annotate(count=Count('id'))
-            .order_by('-count'))
+    return (
+        Packet.objects.values("protocol").annotate(count=Count("id")).order_by("-count")
+    )
+
 
 def get_top_talkers():
-    return (Packet.objects
-            .values('src_ip')
-            .annotate(
-                packet_count=Count('id'),
-                total_bytes=Sum('size')
-            )
-            .order_by('-packet_count')[:10])
+    return (
+        Packet.objects.values("src_ip")
+        .annotate(packet_count=Count("id"), total_bytes=Sum("size"))
+        .order_by("-packet_count")[:10]
+    )
+
 
 def get_port_activity():
-    return (Packet.objects
-            .filter(dst_port__isnull=False)
-            .values('dst_port')
-            .annotate(count=Count('id'))
-            .order_by('-count')[:10])
+    return (
+        Packet.objects.filter(dst_port__isnull=False)
+        .values("dst_port")
+        .annotate(count=Count("id"))
+        .order_by("-count")[:10]
+    )
+
 
 def network_analysis_view(request):
     # Get protocol distribution
-    protocol_dist = list(Packet.objects
-        .values('protocol')
-        .annotate(count=Count('id'))
-        .order_by('-count'))
+    protocol_dist = list(
+        Packet.objects.values("protocol").annotate(count=Count("id")).order_by("-count")
+    )
     print("Protocol Distribution:", protocol_dist)  # Debug print
 
     # Get top talkers
-    top_talkers = list(Packet.objects
-        .values('src_ip')
-        .annotate(
-            packet_count=Count('id'),
-            total_bytes=Sum('size')
-        )
+    top_talkers = list(
+        Packet.objects.values("src_ip")
+        .annotate(packet_count=Count("id"), total_bytes=Sum("size"))
         .exclude(src_ip__isnull=True)
-        .order_by('-packet_count')[:10])
+        .order_by("-packet_count")[:10]
+    )
     print("Top Talkers:", top_talkers)  # Debug print
 
     # Get port activity
-    port_activity = list(Packet.objects
-        .values('dst_port')
-        .annotate(count=Count('id'))
+    port_activity = list(
+        Packet.objects.values("dst_port")
+        .annotate(count=Count("id"))
         .exclude(dst_port__isnull=True)
-        .order_by('-count')[:10])
+        .order_by("-count")[:10]
+    )
     print("Port Activity:", port_activity)  # Debug print
 
     # Create context with debug information
     context = {
-        'protocol_distribution': json.dumps(protocol_dist, cls=DjangoJSONEncoder),
-        'top_talkers': json.dumps(top_talkers, cls=DjangoJSONEncoder),
-        'port_activity': json.dumps(port_activity, cls=DjangoJSONEncoder),
-        'debug_packet_count': Packet.objects.count()  # Add total packet count
+        "protocol_distribution": json.dumps(protocol_dist, cls=DjangoJSONEncoder),
+        "top_talkers": json.dumps(top_talkers, cls=DjangoJSONEncoder),
+        "port_activity": json.dumps(port_activity, cls=DjangoJSONEncoder),
+        "debug_packet_count": Packet.objects.count(),  # Add total packet count
     }
 
     print("Context being sent to template:", context)  # Debug print
-    return render(request, 'monitor/network_analysis.html', context)
-
+    return render(request, "monitor/network_analysis.html", context)
 
 
 def alert_dashboard(request):
     active_alerts = Alert.objects.filter(resolved=False)
     resolved_alerts = Alert.objects.filter(resolved=True)
     thresholds = AlertThreshold.objects.all()
-    
+
     context = {
-        'active_alerts': active_alerts,
-        'resolved_alerts': resolved_alerts,
-        'thresholds': thresholds,
+        "active_alerts": active_alerts,
+        "resolved_alerts": resolved_alerts,
+        "thresholds": thresholds,
     }
-    return render(request, 'monitor/alert_dashboard.html', context)
+    return render(request, "monitor/alert_dashboard.html", context)
+
 
 def manage_thresholds(request):
-    if request.method == 'POST':
+    if request.method == "POST":
         form = AlertThresholdForm(request.POST)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Alert threshold created successfully.')
-            return redirect('alert_dashboard')
+            messages.success(request, "Alert threshold created successfully.")
+            return redirect("alert_dashboard")
     else:
         form = AlertThresholdForm()
-    
+
     thresholds = AlertThreshold.objects.all()
-    return render(request, 'monitor/manage_thresholds.html', {
-        'form': form,
-        'thresholds': thresholds
-    })
+    return render(
+        request,
+        "monitor/manage_thresholds.html",
+        {"form": form, "thresholds": thresholds},
+    )
+
 
 def acknowledge_alert(request, alert_id):
     alert = get_object_or_404(Alert, id=alert_id)
-    if request.method == 'POST':
+    if request.method == "POST":
         alert.acknowledged = True
         alert.acknowledged_by = request.user.username
         alert.acknowledged_at = timezone.now()
-        alert.notes = request.POST.get('notes', '')
+        alert.notes = request.POST.get("notes", "")
         alert.save()
-        messages.success(request, 'Alert acknowledged successfully.')
-    return redirect('alert_dashboard')
+        messages.success(request, "Alert acknowledged successfully.")
+    return redirect("alert_dashboard")
+
 
 def resolve_alert(request, alert_id):
     alert = get_object_or_404(Alert, id=alert_id)
-    if request.method == 'POST':
+    if request.method == "POST":
         alert.resolved = True
         alert.resolved_at = timezone.now()
         alert.save()
-        messages.success(request, 'Alert resolved successfully.')
-    return redirect('alert_dashboard')
+        messages.success(request, "Alert resolved successfully.")
+    return redirect("alert_dashboard")
+
 
 def test_alert(request):
     """Test function to trigger an alert"""
@@ -241,63 +258,86 @@ def test_alert(request):
     threshold, created = AlertThreshold.objects.get_or_create(
         name="High CPU Usage Test",
         defaults={
-            'metric': 'cpu_usage',
-            'threshold_value': 80.0,
-            'severity': 'high',
-            'enabled': True,
-            'email_notification': True,
-            'notification_email': 'test@example.com',
-            'description': 'Test alert for CPU usage above 80%'
-        }
+            "metric": "cpu_usage",
+            "threshold_value": 80.0,
+            "severity": "high",
+            "enabled": True,
+            "email_notification": True,
+            "notification_email": "test@example.com",
+            "description": "Test alert for CPU usage above 80%",
+        },
     )
-    
-    # Simulate a high CPU value
-    check_threshold('cpu_usage', 85.0)
-    
-    messages.success(request, 'Test alert has been triggered. Check the console for the email output.')
-    return redirect('alert_dashboard')
 
+    # Simulate a high CPU value
+    check_threshold("cpu_usage", 85.0)
+
+    messages.success(
+        request,
+        "Test alert has been triggered. Check the console for the email output.",
+    )
+    return redirect("alert_dashboard")
 
 
 def export_packets_csv(request):
-    response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = f'attachment; filename="packet_history_{timezone.now().strftime("%Y%m%d_%H%M%S")}.csv"'
-    
+    response = HttpResponse(content_type="text/csv")
+    response[
+        "Content-Disposition"
+    ] = f'attachment; filename="packet_history_{timezone.now().strftime("%Y%m%d_%H%M%S")}.csv"'
+
     writer = csv.writer(response)
-    writer.writerow(['Timestamp', 'Protocol', 'Source IP', 'Source Port', 
-                    'Destination IP', 'Destination Port', 'Size', 'Summary'])
-    
-    packets = Packet.objects.all().order_by('-timestamp')
+    writer.writerow(
+        [
+            "Timestamp",
+            "Protocol",
+            "Source IP",
+            "Source Port",
+            "Destination IP",
+            "Destination Port",
+            "Size",
+            "Summary",
+        ]
+    )
+
+    packets = Packet.objects.all().order_by("-timestamp")
     for packet in packets:
-        writer.writerow([
-            packet.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
-            packet.protocol,
-            packet.src_ip,
-            packet.src_port,
-            packet.dst_ip,
-            packet.dst_port,
-            packet.size,
-            packet.summary
-        ])
-    
+        writer.writerow(
+            [
+                packet.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
+                packet.protocol,
+                packet.src_ip,
+                packet.src_port,
+                packet.dst_ip,
+                packet.dst_port,
+                packet.size,
+                packet.summary,
+            ]
+        )
+
     return response
 
+
 def export_packets_json(request):
-    packets = Packet.objects.all().order_by('-timestamp')
+    packets = Packet.objects.all().order_by("-timestamp")
     packet_list = []
-    
+
     for packet in packets:
-        packet_list.append({
-            'timestamp': packet.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
-            'protocol': packet.protocol,
-            'source_ip': packet.src_ip,
-            'source_port': packet.src_port,
-            'destination_ip': packet.dst_ip,
-            'destination_port': packet.dst_port,
-            'size': packet.size,
-            'summary': packet.summary
-        })
-    
-    response = HttpResponse(json.dumps(packet_list, indent=2), content_type='application/json')
-    response['Content-Disposition'] = f'attachment; filename="packet_history_{timezone.now().strftime("%Y%m%d_%H%M%S")}.json"'
+        packet_list.append(
+            {
+                "timestamp": packet.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
+                "protocol": packet.protocol,
+                "source_ip": packet.src_ip,
+                "source_port": packet.src_port,
+                "destination_ip": packet.dst_ip,
+                "destination_port": packet.dst_port,
+                "size": packet.size,
+                "summary": packet.summary,
+            }
+        )
+
+    response = HttpResponse(
+        json.dumps(packet_list, indent=2), content_type="application/json"
+    )
+    response[
+        "Content-Disposition"
+    ] = f'attachment; filename="packet_history_{timezone.now().strftime("%Y%m%d_%H%M%S")}.json"'
     return response

@@ -1,0 +1,155 @@
+# Python Cache Files
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+.pytest_cache/
+
+# Virtual Environment
+.venv/
+venv/
+ENV/
+env/
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Security and Sensitive Data
+.env
+*.key
+*.pem
+*.crt
+*.csr
+*.p12
+*.pfx
+
+# Development and Local Configuration
+*.local
+*.dev
+local_settings.py
+.env.local
+.env.development
+.env.production
+
+# Compiled and Intermediate Files
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# IDE and Editor Files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+*.sublime-project
+*.sublime-workspace
+.eclipse
+.netbeans
+.komodoproject
+
+# OS Generated Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Specific to NetCreep
+logs/
+*.bak
+*.tmp
+
+# Network Capture and Monitoring
+captured_packets/
+network_logs/
+*.pcap
+*.cap
+
+# Machine Learning Models
+*.model
+*.pkl
+
+# Performance and Profiling
+*.prof
+*.pstats
+
+# Sensitive Configuration
+config.ini
+*.conf
+
+# Temporary Files
+*.swp
+*.swo
+.~lock.*#
+
+# Backup Files
+*.bak
+*.gho
+*.ori
+*.orig
+*.tmp
+
+# Monitoring Specific
+anomaly_detection_cache/
+system_metrics/
+network_stats/
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+
+# Coverage and Testing
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# Deployment and CI/CD
+.dockerignore
+Dockerfile
+docker-compose.yml
+
+# Dependency Directories
+node_modules/
+jspm_packages/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Specific to Network Monitoring
+network_capture_sessions/
+packet_analysis_cache/
+intrusion_detection_logs/
+
+# Sensitive Metadata
+.cursorrules
+.cursorignore

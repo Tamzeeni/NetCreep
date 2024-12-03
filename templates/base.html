@@ -4,16 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}NetCreep{% endblock %}</title>
-    
+
     <!-- CSS Framework (Tailwind CSS) -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
+
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
+
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    
+
     <style>
         .nav-link {
             @apply px-4 py-2 text-gray-700 hover:text-blue-600 transition-colors;
@@ -28,25 +28,25 @@
     <nav class="bg-white shadow-sm">
         <div class="max-w-7xl mx-auto px-4">
             <div class="flex space-x-4 py-3">
-                <a href="{% url 'dashboard' %}" class="nav-link">
+                <a href="{% url 'monitor:dashboard' %}" class="nav-link">
                     <i class="fas fa-chart-line mr-2"></i>Dashboard
                 </a>
-                <a href="{% url 'start_sniffing' %}" class="nav-link">
+                <a href="{% url 'monitor:start_sniffing' %}" class="nav-link">
                     <i class="fas fa-network-wired mr-2"></i>Start Sniffing
                 </a>
-                <a href="{% url 'system_stats' %}" class="nav-link">
+                <a href="{% url 'monitor:system_stats' %}" class="nav-link">
                     <i class="fas fa-server mr-2"></i>System Stats
                 </a>
-                <a href="{% url 'packet_history' %}" class="nav-link">
+                <a href="{% url 'monitor:packet_history' %}" class="nav-link">
                     <i class="fas fa-history mr-2"></i>Packet History
                 </a>
-                <a href="{% url 'system_stats_history' %}" class="nav-link">
+                <a href="{% url 'monitor:system_stats_history' %}" class="nav-link">
                     <i class="fas fa-chart-area mr-2"></i>Stats History
                 </a>
-                <a href="{% url 'network_analysis' %}" class="nav-link">
+                <a href="{% url 'monitor:network_analysis' %}" class="nav-link">
                     <i class="fas fa-chart-pie mr-2"></i>Network Analysis
                 </a>
-                <a href="{% url 'alert_dashboard' %}" class="nav-link">
+                <a href="{% url 'monitor:alert_dashboard' %}" class="nav-link">
                     <i class="fas fa-bell mr-2"></i>Alerts
                 </a>
             </div>

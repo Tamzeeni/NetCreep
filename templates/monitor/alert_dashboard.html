@@ -5,8 +5,8 @@
     <div class="dashboard-header">
         <h1>Alert Dashboard</h1>
         <div class="header-actions">
-            <a href="{% url 'test_alert' %}" class="btn btn-secondary">Test Alert</a>
-            <a href="{% url 'manage_thresholds' %}" class="btn btn-primary">Manage Thresholds</a>
+            <a href="{% url 'monitor:test_alert' %}" class="btn btn-secondary">Test Alert</a>
+            <a href="{% url 'monitor:manage_thresholds' %}" class="btn btn-primary">Manage Thresholds</a>
         </div>
     </div>
 
@@ -30,13 +30,13 @@
                 </div>
                 <div class="alert-actions">
                     {% if not alert.acknowledged %}
-                    <form method="post" action="{% url 'acknowledge_alert' alert.id %}">
+                    <form method="post" action="{% url 'monitor:acknowledge_alert' alert.id %}">
                         {% csrf_token %}
                         <textarea name="notes" placeholder="Add acknowledgment notes"></textarea>
                         <button type="submit" class="btn btn-warning">Acknowledge</button>
                     </form>
                     {% endif %}
-                    <form method="post" action="{% url 'resolve_alert' alert.id %}">
+                    <form method="post" action="{% url 'monitor:resolve_alert' alert.id %}">
                         {% csrf_token %}
                         <button type="submit" class="btn btn-success">Resolve</button>
                     </form>

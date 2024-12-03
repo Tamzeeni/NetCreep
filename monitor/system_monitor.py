@@ -1,6 +1,8 @@
-import psutil
-from .models import SystemStat
 import time
+
+import psutil
+
+from .models import SystemStat
 from .utils import broadcast_update
 
 

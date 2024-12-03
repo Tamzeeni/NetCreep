@@ -4,7 +4,7 @@
 <div class="threshold-management">
     <div class="dashboard-header">
         <h1>Manage Alert Thresholds</h1>
-        <a href="{% url 'alert_dashboard' %}" class="btn btn-secondary">Back to Dashboard</a>
+        <a href="{% url 'monitor:alert_dashboard' %}" class="btn btn-secondary">Back to Dashboard</a>
     </div>
 
     <!-- Add New Threshold Form -->
@@ -12,7 +12,7 @@
         <h2>Add New Threshold</h2>
         <form method="post" class="threshold-form">
             {% csrf_token %}
-            
+
             {% if form.errors %}
             <div class="alert alert-danger">
                 {% for field, errors in form.errors.items %}

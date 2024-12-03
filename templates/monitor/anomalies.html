@@ -5,7 +5,7 @@
 {% block content %}
 <div class="anomalies-container">
     <h1>Network Anomalies</h1>
-    
+
     <div id="active-anomalies">
         <h2>Active Anomalies</h2>
         <div class="anomalies-list">
@@ -21,7 +21,7 @@
 
 <script>
 function updateAnomalies() {
-    fetch("{% url 'system_stats_json' %}")
+    fetch("{% url 'monitor:system_stats_json' %}")
         .then(response => response.json())
         .then(data => {
             const anomaliesContainer = document.querySelector('.anomalies-list');
